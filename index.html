@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>August 2025 Expense Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --primary: #5e72e4;
+      --accent: #24c6dc;
+      --bg: #f9fafd;
+      --card: #fff;
+      --border: #e0e4ea;
+      --danger: #fa4654;
+      --edit: #fad787;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #333;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .container {
+      max-width: 540px;
+      margin: 2rem auto;
+      background: var(--card);
+      border-radius: 1.2rem;
+      box-shadow: 0 7px 32px rgba(24,40,108,0.08), 0 1.5px 8px #c2dae7;
+      padding: 2rem 1.2rem 1.5rem 1.2rem;
+      width: 100%;
+    }
+    h1 {
+      color: var(--primary);
+      margin: 0 0 16px 0;
+      font-size: 2rem;
+      text-align: center;
+      letter-spacing: .02em;
+      font-weight: 600;
+    }
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .8rem;
+      margin-bottom: 1.5rem;
+      justify-content: center;
+    }
+    form label {
+      flex: 1 1 120px;
+      min-width: 100px;
+      font-size: .93em;
+      color: #444;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0.4rem;
+    }
+    form input[type="number"], 
+    form input[type="text"], 
+    form input[type="date"],
+    form input[type="time"] {
+      margin-top: 4px;
+      padding: .5rem .7rem;
+      border-radius: .5rem;
+      border: 1px solid var(--border);
+      background: #fcfcfc;
+      font-size: 1.03em;
+      transition: border .2s;
+      outline: none;
+    }
+    form input:focus {
+      border: 1.5px solid var(--accent);
+    }
+    form button {
+      flex-basis: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      color: #fff; font-weight: 600;
+      border: none;
+      padding: 0.85em 2.2em;
+      border-radius: .7em;
+      font-size: 1.1em;
+      margin-top: 10px;
+      cursor: pointer;
+      box-shadow: 0 1px 8px #d4e5ea;
+      transition: background 0.2s;
+    }
+    form button:hover { filter: brightness(0.96); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      font-size: 1.01em;
+      border-radius: 1rem;
+      overflow: hidden;
+      margin-bottom: 0.6em;
+    }
+    thead { background: #f0f4f9; }
+    th, td {
+      padding: 9px 6px 8px 6px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    th { color: var(--primary); font-weight: 600; }
+    tbody tr:last-child td { border-bottom: none; }
+    .total-row {
+      background: #ebf5fd;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .remove-btn, .edit-btn, .save-btn, .cancel-btn {
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: .91em;
+      padding: 4px 10px;
+      cursor: pointer;
+      margin: 0 .12em;
+      transition: background .2s;
+    }
+    .remove-btn { background: var(--danger); }
+    .edit-btn { background: var(--primary); }
+    .save-btn { background: var(--accent); }
+    .cancel-btn { background: #bbb; }
+    .remove-btn:hover { background: #e32a34; }
+    .edit-btn:hover { background: #4253c1; }
+    .save-btn:hover { background: #209dad; }
+    .cancel-btn:hover { background: #949494; }
+    .editing-row td {
+      background: var(--edit)!important;
+      color: #52410f;
+    }
+    @media (max-width: 720px) {
+      .container { padding: 1rem 3vw; }
+      h1 { font-size: 1.3rem; }
+      table, thead, tbody, tr, th, td { font-size: .98em; }
+      form label { min-width: 75px; }
+    }
+    @media (max-width: 500px) {
+      .container { padding: 0.5rem 0.1rem; }
+      form { flex-direction: column; gap: .2rem;}
+      form label { min-width: 0; }
+      table { font-size: .935em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>August 2025 Expense Tracker</h1>
+    <form id="expense-form" autocomplete="off">
+      <label>
+        Date
+        <input type="date" name="date" min="2025-08-01" max="2025-08-31" required>
+      </label>
+      <label>
+        Time
+        <input type="time" name="time" required>
+      </label>
+      <label>
+        Description
+        <input type="text" name="description" placeholder="E.g., Lunch" required>
+      </label>
+      <label>
+        Amount
+        <input type="number" name="amount" min="1" placeholder="₹" required>
+      </label>
+      <label>
+        Notes
+        <input type="text" name="notes" placeholder="(optional)">
+      </label>
+      <button type="submit">Add Expense</button>
+    </form>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Day</th>
+          <th>Time</th>
+          <th>Description</th>
+          <th>Amount</th>
+          <th>Notes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="expenses-table-body"></tbody>
+    </table>
+  </div>
+  <script>
+    const weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const form = document.getElementById('expense-form');
+    const tbody = document.getElementById('expenses-table-body');
+    let expenses = [];
+    let editingId = null;
+    let editingBuffer = {};
+
+    function toDayStr(date) {
+      return weekdays[new Date(date).getDay()];
+    }
+
+    function formatAMPM(time) {
+      if (!time) return "";
+      let [hour, minute] = time.split(':').map(Number);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      hour = hour % 12 || 12;
+      return hour + ':' + (minute < 10 ? '0'+minute : minute) + ' ' + ampm;
+    }
+
+    if (localStorage.expenses2025Aug) {
+      try { expenses = JSON.parse(localStorage.expenses2025Aug); }
+      catch { expenses = []; }
+    }
+
+    function saveExpenses() {
+      localStorage.expenses2025Aug = JSON.stringify(expenses);
+    }
+
+    function groupByDate(arr) {
+      let result = {};
+      arr.forEach(item => {
+        if (!result[item.date]) result[item.date] = [];
+        result[item.date].push(item);
+      });
+      return result;
+    }
+
+    function renderTable() {
+      const byDate = groupByDate(expenses);
+      const sortedDates = Object.keys(byDate).sort();
+      tbody.innerHTML = '';
+      for(const date of sortedDates) {
+        const day = toDayStr(date);
+        let total = 0;
+        byDate[date].forEach(exp => total += exp.amount);
+        byDate[date].forEach((exp, idx) => {
+          let tr = document.createElement('tr');
+          if (editingId === exp.id) {
+            tr.className = 'editing-row';
+            tr.innerHTML = `
+              <td><input type="date" value="${editingBuffer.date}" min="2025-08-01" max="2025-08-31" style="width:110px"></td>
+              <td>${toDayStr(editingBuffer.date)}</td>
+              <td><input type="time" value="${editingBuffer.time}" style="width:95px"></td>
+              <td><input type="text" value="${escapeHtml(editingBuffer.description)}" style="width:110px"></td>
+              <td><input type="number" min="1" value="${editingBuffer.amount}" style="width:68px"></td>
+              <td><input type="text" value="${escapeHtml(editingBuffer.notes)}" style="width:95px"></td>
+              <td>
+                <button class="save-btn" title="Save" onclick="saveEdit('${exp.id}')">&#10003; Save</button>
+                <button class="cancel-btn" title="Cancel" onclick="cancelEdit('${exp.id}')">&#10005; Cancel</button>
+              </td>
+            `;
+          } else {
+            tr.innerHTML = `
+              <td>${exp.date}</td>
+              <td>${day}</td>
+              <td>${formatAMPM(exp.time)}</td>
+              <td>${escapeHtml(exp.description)}</td>
+              <td>₹${exp.amount}</td>
+              <td>${escapeHtml(exp.notes||"")}</td>
+              <td>
+                <button class="edit-btn" title="Edit" onclick="editExpense('${exp.id}')">&#9998; Edit</button>
+                <button class="remove-btn" title="Remove" onclick="removeExpense('${exp.id}')">&times; Delete</button>
+              </td>
+            `;
+          }
+          tbody.appendChild(tr);
+        });
+        let tr = document.createElement('tr');
+        tr.className = 'total-row';
+        tr.innerHTML = `
+          <td colspan="4">Total for ${date}</td>
+          <td colspan="3">₹${total}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // Escape HTML to prevent injection in value/text
+    function escapeHtml(text) {
+      return String(text||"")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function removeExpense(id) {
+      expenses = expenses.filter(exp => exp.id !== id);
+      saveExpenses();
+      renderTable();
+    }
+    window.removeExpense = removeExpense;
+
+    function editExpense(id) {
+      editingId = id;
+      const exp = expenses.find(e => e.id===id);
+      editingBuffer = {...exp}; // shallow copy
+      renderTable();
+    }
+    window.editExpense = editExpense;
+
+    function saveEdit(id) {
+      const tr = Array.from(tbody.querySelectorAll('tr')).find(row => row.querySelector('.save-btn'));
+      if (!tr) return;
+      const inputs = tr.querySelectorAll('input');
+      const [dateInput,, timeInput, descInput, amtInput, notesInput] = inputs;
+      // Validate
+      const date = dateInput.value;
+      const time = timeInput.value;
+      const description = descInput.value.trim();
+      const amount = Number(amtInput.value);
+      const notes = notesInput.value.trim();
+      if (!date || !time || !description || !amount) return alert("All fields except Notes are required!");
+      // Update
+      expenses = expenses.map(exp => exp.id===id ? 
+        {...exp, date, time, description, amount, notes}
+        : exp);
+      editingId = null;
+      editingBuffer = {};
+      saveExpenses();
+      renderTable();
+    }
+    window.saveEdit = saveEdit;
+
+    function cancelEdit(id) {
+      editingId = null;
+      editingBuffer = {};
+      renderTable();
+    }
+    window.cancelEdit = cancelEdit;
+
+    form.onsubmit = function(e) {
+      e.preventDefault();
+      const data = new FormData(form);
+      const date = data.get('date');
+      const time = data.get('time');
+      const description = data.get('description').trim();
+      const amount = Number(data.get('amount'));
+      const notes = data.get('notes').trim();
+      if (!date || !time || !description || !amount) return;
+      expenses.push({
+        id: (Date.now() + Math.random()).toString(36),
+        date, time, description, amount, notes
+      });
+      saveExpenses();
+      renderTable();
+      form.reset();
+    };
+
+    renderTable();
+  </script>
+</body>
+</html>
